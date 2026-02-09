@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  VISITOR
+  OPERATOR
+  ADMIN
+}
+
+enum ProfessionType {
+  GOVERNMENT_OFFICIAL
+  PRIVATE_EMPLOYEE
+  ENTREPRENEUR
+  RESEARCHER
+  STUDENT
+  OTHERS
+}
+
+enum ServiceType {
+  KONSULTASI_STATISTIK
+  PENJUALAN_DATA_MIKRO
+  PERPUSTAKAAN_STATISTIK
+  REKOMENDASI_KEGIATAN_STATISTIK
+}
+
+enum TicketStatus {
+  PENDING
+  ON_PROCESS
+  DONE
+  CANCELLED
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  password       String
+  name           String
+  professionType ProfessionType @map("profession_type")
+  role           UserRole       @default(VISITOR)
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  tickets          Ticket[]          @relation("VisitorTickets")
+  operatedTickets  Ticket[]          @relation("OperatorTickets")
+  feedbacks        Feedback[]
+  schedules        OperatorSchedule[]
+
+  @@map("users")
+}
+
+model Ticket {
+  id            String       @id @default(cuid())
+  ticketNumber  String       @unique @map("ticket_number")
+  userId        String       @map("user_id")
+  operatorId    String?      @map("operator_id")
+  serviceType   ServiceType  @map("service_type")
+  status        TicketStatus @default(PENDING)
+  scheduledDate DateTime     @map("scheduled_date") @db.Date
+  scheduledTime String       @map("scheduled_time")
+  qrCode        String       @map("qr_code")
+  queueNumber   Int          @map("queue_number")
+  startedAt     DateTime?    @map("started_at")
+  completedAt   DateTime?    @map("completed_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  user     User      @relation("VisitorTickets", fields: [userId], references: [id])
+  operator User?     @relation("OperatorTickets", fields: [operatorId], references: [id])
+  feedback Feedback?
+
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([userId])
+  @@map("tickets")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  ticketId  String   @unique @map("ticket_id")
+  userId    String   @map("user_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("feedbacks")
+}
+
+model OperatorSchedule {
+  id           String   @id @default(cuid())
+  operatorId   String   @map("operator_id")
+  scheduleDate DateTime @map("schedule_date") @db.Date
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  operator User @relation(fields: [operatorId], references: [id])
+
+  @@unique([operatorId, scheduleDate])
+  @@index([scheduleDate])
+  @@map("operator_schedules")
+}

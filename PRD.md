@@ -22,11 +22,11 @@ Silvana adalah aplikasi web untuk manajemen pengunjung dan antrian layanan stati
 
 ### 1.2 Target Pengguna
 
-| Pengguna | Deskripsi |
-|---|---|
-| **Pengunjung** | Masyarakat umum yang membutuhkan layanan statistik (PNS, karyawan swasta, wirausahawan, peneliti, mahasiswa, dll.) |
-| **Operator Layanan** | Petugas PST yang bertugas melayani pengunjung |
-| **Admin** | Pengelola sistem yang mengatur pengguna dan operasional layanan |
+| Pengguna             | Deskripsi                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Pengunjung**       | Masyarakat umum yang membutuhkan layanan statistik (PNS, karyawan swasta, wirausahawan, peneliti, mahasiswa, dll.) |
+| **Operator Layanan** | Petugas PST yang bertugas melayani pengunjung                                                                      |
+| **Admin**            | Pengelola sistem yang mengatur pengguna dan operasional layanan                                                    |
 
 ---
 
@@ -61,11 +61,11 @@ Silvana adalah aplikasi web untuk manajemen pengunjung dan antrian layanan stati
 
 Terdapat 3 role dalam sistem:
 
-| Role | Akses |
-|---|---|
+| Role           | Akses                                               |
+| -------------- | --------------------------------------------------- |
 | **Pengunjung** | Membuat tiket, melihat antrian, memberikan feedback |
-| **Operator** | Memproses tiket, memulai/mengakhiri layanan |
-| **Admin** | CRUD pengguna, mengelola operator, mengatur jadwal |
+| **Operator**   | Memproses tiket, memulai/mengakhiri layanan         |
+| **Admin**      | CRUD pengguna, mengelola operator, mengatur jadwal  |
 
 #### FR-04: Manajemen Pengguna (Admin)
 
@@ -113,12 +113,12 @@ Alur status tiket:
 [Pending] --pengunjung batal--> [Cancelled]
 ```
 
-| Status | Deskripsi |
-|---|---|
-| **Pending** | Tiket sudah dibuat, menunggu dilayani |
-| **On Process** | Layanan sedang berlangsung |
-| **Done** | Layanan selesai |
-| **Cancelled** | Tiket dibatalkan oleh pengunjung |
+| Status         | Deskripsi                             |
+| -------------- | ------------------------------------- |
+| **Pending**    | Tiket sudah dibuat, menunggu dilayani |
+| **On Process** | Layanan sedang berlangsung            |
+| **Done**       | Layanan selesai                       |
+| **Cancelled**  | Tiket dibatalkan oleh pengunjung      |
 
 #### FR-09: Informasi Antrian Pengunjung
 
@@ -256,55 +256,55 @@ UserRole: visitor, operator, admin
 
 ### 5.1 Halaman Publik
 
-| Halaman | Deskripsi |
-|---|---|
-| `/login` | Halaman login |
+| Halaman     | Deskripsi                          |
+| ----------- | ---------------------------------- |
+| `/login`    | Halaman login                      |
 | `/register` | Halaman registrasi pengunjung baru |
 
 ### 5.2 Halaman Pengunjung
 
-| Halaman | Deskripsi |
-|---|---|
-| `/dashboard` | Dashboard pengunjung - ringkasan tiket aktif |
-| `/tickets/new` | Form pembuatan tiket baru |
-| `/tickets` | Daftar tiket milik pengunjung |
-| `/tickets/:id` | Detail tiket (status, QR code, info antrian) |
-| `/tickets/:id/feedback` | Form rating & feedback |
-| `/schedule` | Lihat jadwal operator yang bertugas |
+| Halaman                 | Deskripsi                                    |
+| ----------------------- | -------------------------------------------- |
+| `/dashboard`            | Dashboard pengunjung - ringkasan tiket aktif |
+| `/tickets/new`          | Form pembuatan tiket baru                    |
+| `/tickets`              | Daftar tiket milik pengunjung                |
+| `/tickets/:id`          | Detail tiket (status, QR code, info antrian) |
+| `/tickets/:id/feedback` | Form rating & feedback                       |
+| `/schedule`             | Lihat jadwal operator yang bertugas          |
 
 ### 5.3 Halaman Operator
 
-| Halaman | Deskripsi |
-|---|---|
-| `/operator/dashboard` | Dashboard operator - antrian hari ini |
-| `/operator/queue` | Daftar antrian tiket (dengan tombol Mulai & scan QR) |
-| `/operator/tickets` | Riwayat tiket yang sudah dilayani |
+| Halaman               | Deskripsi                                            |
+| --------------------- | ---------------------------------------------------- |
+| `/operator/dashboard` | Dashboard operator - antrian hari ini                |
+| `/operator/queue`     | Daftar antrian tiket (dengan tombol Mulai & scan QR) |
+| `/operator/tickets`   | Riwayat tiket yang sudah dilayani                    |
 
 ### 5.4 Halaman Admin
 
-| Halaman | Deskripsi |
-|---|---|
+| Halaman            | Deskripsi                           |
+| ------------------ | ----------------------------------- |
 | `/admin/dashboard` | Dashboard admin - statistik layanan |
-| `/admin/users` | Manajemen pengguna (CRUD) |
-| `/admin/operators` | Manajemen operator |
-| `/admin/schedules` | Manajemen jadwal operator |
-| `/admin/tickets` | Daftar seluruh tiket (semua status) |
-| `/admin/feedback` | Rekapitulasi rating & feedback |
+| `/admin/users`     | Manajemen pengguna (CRUD)           |
+| `/admin/operators` | Manajemen operator                  |
+| `/admin/schedules` | Manajemen jadwal operator           |
+| `/admin/tickets`   | Daftar seluruh tiket (semua status) |
+| `/admin/feedback`  | Rekapitulasi rating & feedback      |
 
 ---
 
 ## 6. Tech Stack (Rekomendasi)
 
-| Layer | Teknologi |
-|---|---|
-| **Frontend** | Next.js (App Router) + TypeScript |
-| **Styling** | Tailwind CSS + shadcn/ui |
-| **Backend** | Next.js API Routes (Route Handlers) |
-| **Database** | PostgreSQL |
-| **ORM** | Prisma |
-| **Autentikasi** | NextAuth.js (Auth.js) dengan Credentials Provider |
-| **QR Code** | `qrcode` library (generate) + `html5-qrcode` (scan) |
-| **Deployment** | Vercel / VPS |
+| Layer           | Teknologi                                           |
+| --------------- | --------------------------------------------------- |
+| **Frontend**    | Next.js (App Router) + TypeScript                   |
+| **Styling**     | Tailwind CSS + shadcn/ui                            |
+| **Backend**     | Next.js API Routes (Route Handlers)                 |
+| **Database**    | PostgreSQL                                          |
+| **ORM**         | Prisma                                              |
+| **Autentikasi** | NextAuth.js (Auth.js) dengan Credentials Provider   |
+| **QR Code**     | `qrcode` library (generate) + `html5-qrcode` (scan) |
+| **Deployment**  | Vercel / VPS                                        |
 
 ---
 
