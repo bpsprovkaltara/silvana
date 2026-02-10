@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, FormEvent } from "react";
+import { toast } from "sonner";
 
 const SERVICE_OPTIONS = [
   {
@@ -87,13 +88,18 @@ export default function NewTicketPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Gagal membuat tiket");
+        const errorMsg = data.error || "Gagal membuat tiket";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
+      toast.success("Tiket berhasil dibuat!");
       router.push(`/tickets/${data.id}`);
     } catch {
-      setError("Terjadi kesalahan, silakan coba lagi");
+      const errorMsg = "Terjadi kesalahan, silakan coba lagi";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

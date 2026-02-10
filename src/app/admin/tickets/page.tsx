@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { CancelTicketButton } from "@/components/admin/CancelTicketButton";
 
 const serviceLabels: Record<string, string> = {
   KONSULTASI_STATISTIK: "Konsultasi Statistik",
@@ -132,6 +133,9 @@ export default async function AdminTicketsPage() {
                 <th className="text-left px-6 py-4 text-xs font-semibold text-[#64748b] uppercase tracking-wider hidden xl:table-cell">
                   Operator
                 </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -173,11 +177,20 @@ export default async function AdminTicketsPage() {
                   <td className="px-6 py-4 text-sm text-[#64748b] hidden xl:table-cell">
                     {ticket.operator?.name || <span className="text-xs italic">Belum ada</span>}
                   </td>
+                  <td className="px-6 py-4">
+                    {(ticket.status === "PENDING" || ticket.status === "ON_PROCESS") && (
+                      <CancelTicketButton
+                        ticketId={ticket.id}
+                        ticketNumber={ticket.ticketNumber}
+                        variant="icon"
+                      />
+                    )}
+                  </td>
                 </tr>
               ))}
               {tickets.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-[#64748b]">
+                  <td colSpan={8} className="px-6 py-12 text-center text-[#64748b]">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#f1f5f9] flex items-center justify-center">
                       <svg
                         className="w-8 h-8 text-[#64748b]"

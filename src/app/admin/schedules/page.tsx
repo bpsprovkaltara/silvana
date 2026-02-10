@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { CreateScheduleDialog } from "@/components/admin/CreateScheduleDialog";
+import { ScheduleCard } from "@/components/admin/ScheduleCard";
 
 export default async function AdminSchedulesPage() {
   const session = await auth();
@@ -63,6 +65,7 @@ export default async function AdminSchedulesPage() {
           <h1 className="text-display text-3xl font-bold text-[#0a1628]">Jadwal Operator</h1>
           <p className="text-[#64748b] mt-1">Atur jadwal tugas harian operator</p>
         </div>
+        <CreateScheduleDialog operators={operators} />
       </div>
 
       {/* Operators Summary */}
@@ -95,67 +98,14 @@ export default async function AdminSchedulesPage() {
           const ops = groupedSchedules[dateStr] || [];
 
           return (
-            <div
+            <ScheduleCard
               key={dateStr}
-              className={`rounded-xl p-5 shadow-card transition-all ${
-                isToday
-                  ? "bg-gradient-to-br from-[#d4744a]/10 to-[#b85d38]/10 border-2 border-[#d4744a]/30"
-                  : isWeekend
-                    ? "bg-slate-100/80 opacity-50"
-                    : "glass card-interactive"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p
-                    className={`text-xs font-semibold uppercase tracking-wider ${isToday ? "text-[#d4744a]" : "text-[#64748b]"}`}
-                  >
-                    {dayNames[dayIndex]}
-                  </p>
-                  <p className="text-display text-2xl font-bold text-[#0a1628]">{date.getDate()}</p>
-                  <p className="text-xs text-[#64748b]">
-                    {date.toLocaleDateString("id-ID", { month: "short" })}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  {isToday && (
-                    <span className="px-2 py-0.5 bg-[#d4744a] text-white text-xs font-semibold rounded">
-                      Hari ini
-                    </span>
-                  )}
-                  {isWeekend && (
-                    <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-xs font-semibold rounded">
-                      Libur
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {!isWeekend && (
-                <div className="pt-3 border-t border-slate-200">
-                  {ops.length > 0 ? (
-                    <div className="space-y-2">
-                      {ops.map((op, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 bg-white rounded-lg">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#06b6d4] to-[#0ea5e9] flex items-center justify-center text-white text-xs font-semibold">
-                            {op.operatorName.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#0a1628] truncate">
-                              {op.operatorName}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-3">
-                      <p className="text-xs text-[#64748b] italic">Belum ada jadwal</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+              dateStr={dateStr}
+              isToday={isToday}
+              isWeekend={isWeekend}
+              dayName={dayNames[dayIndex]}
+              operators={ops}
+            />
           );
         })}
       </div>

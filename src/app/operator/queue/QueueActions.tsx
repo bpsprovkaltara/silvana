@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface QueueActionsProps {
   ticketId: string;
@@ -24,13 +25,14 @@ export default function QueueActions({ ticketId, action }: QueueActionsProps) {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        alert(data.error || "Terjadi kesalahan");
+        toast.error(data.error || "Terjadi kesalahan");
         return;
       }
 
+      toast.success(action === "start" ? "Layanan dimulai" : "Layanan selesai");
       router.refresh();
     } catch {
-      alert("Terjadi kesalahan, silakan coba lagi");
+      toast.error("Terjadi kesalahan, silakan coba lagi");
     } finally {
       setIsLoading(false);
     }

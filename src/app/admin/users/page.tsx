@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { CreateUserDialog } from "@/components/admin/CreateUserDialog";
+import { UpdateUserDialog } from "@/components/admin/UpdateUserDialog";
+import { DeleteButton } from "@/components/admin/DeleteButton";
 
 const roleLabels: Record<string, string> = {
   VISITOR: "Pengunjung",
@@ -55,6 +58,7 @@ export default async function AdminUsersPage() {
           <h1 className="text-display text-3xl font-bold text-[#0a1628]">Kelola Pengguna</h1>
           <p className="text-[#64748b] mt-1">Daftar seluruh pengguna sistem</p>
         </div>
+        <CreateUserDialog />
       </div>
 
       {/* Stats */}
@@ -160,6 +164,9 @@ export default async function AdminUsersPage() {
                 <th className="text-left px-6 py-4 text-xs font-semibold text-[#64748b] uppercase tracking-wider hidden lg:table-cell">
                   Terdaftar
                 </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -203,6 +210,26 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-[#64748b] hidden lg:table-cell">
                     {new Date(user.createdAt).toLocaleDateString("id-ID")}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <UpdateUserDialog
+                        user={{
+                          id: user.id,
+                          name: user.name,
+                          email: user.email,
+                          professionType: user.professionType,
+                          role: user.role,
+                          isActive: user.isActive,
+                        }}
+                      />
+                      <DeleteButton
+                        id={user.id}
+                        endpoint="/api/users"
+                        itemName="pengguna"
+                        variant="icon"
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
