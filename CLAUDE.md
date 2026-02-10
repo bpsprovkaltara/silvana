@@ -74,7 +74,7 @@ prisma/
 
 - Use server components by default, add `"use client"` only when needed
 - Database field names use snake_case (via @map), TypeScript uses camelCase
-- Ticket numbers: `[SERVICE_CODE]-[SEQ]` (e.g., KS-001)
+- Ticket numbers: `[SERVICE_CODE]-[YYYYMMDD]-[SEQ]` (e.g., KS-20260210-001)
 - All API routes use Route Handlers in `app/api/`
 - Auth is JWT-based with role-based access control (RBAC)
 - Environment variables in `.env` (local) and `.env.example` (template)
