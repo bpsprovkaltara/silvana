@@ -83,3 +83,4 @@ prisma/
 
 - Admin: `admin@silvana.bps.go.id` / `admin123`
 - Operator: `operator@silvana.bps.go.id` / `operator123`
+- Pengunjung: `pengunjung@silvana.bps.go.id` / `pengunjung123`

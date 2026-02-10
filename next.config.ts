@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Prisma with custom output needs serverExternalPackages
+  serverExternalPackages: ["@prisma/client-runtime-utils"],
 };
 
 export default nextConfig;

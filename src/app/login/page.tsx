@@ -1,4 +1,44 @@
-export default function LoginPage() {
+"use client";
+
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useState, Suspense } from "react";
+
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRegistered = searchParams.get("registered") === "true";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (!result?.ok) {
+        setError("Email atau password salah");
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Terjadi kesalahan, coba lagi");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
@@ -70,7 +110,19 @@ export default function LoginPage() {
               <p className="text-[#64748b]">Masuk ke akun Anda untuk melanjutkan</p>
             </div>
 
-            <form className="space-y-6">
+            {isRegistered && !error && (
+              <div className="mb-6 p-3 bg-green-100 border border-green-300 text-green-700 rounded-lg text-sm">
+                Registrasi berhasil! Silakan masuk dengan akun Anda.
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-6 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-semibold text-[#0a1628]">
                   Email
@@ -79,6 +131,9 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="nama@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4744a] focus:border-transparent transition-all placeholder:text-slate-400"
                 />
               </div>
@@ -91,6 +146,9 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4744a] focus:border-transparent transition-all placeholder:text-slate-400"
                 />
               </div>
@@ -115,9 +173,10 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full px-6 py-3.5 bg-gradient-to-r from-[#d4744a] to-[#b85d38] text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isLoading}
+                className="w-full px-6 py-3.5 bg-gradient-to-r from-[#d4744a] to-[#b85d38] text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Masuk
+                {isLoading ? "Memproses..." : "Masuk"}
               </button>
 
               <div className="relative">
@@ -143,6 +202,7 @@ export default function LoginPage() {
               <div className="text-xs text-[#92400e] space-y-1 font-mono">
                 <p>Admin: admin@silvana.bps.go.id / admin123</p>
                 <p>Operator: operator@silvana.bps.go.id / operator123</p>
+                <p>Pengunjung: pengunjung@silvana.bps.go.id / pengunjung123</p>
               </div>
             </div>
           </div>
@@ -157,8 +217,16 @@ export default function LoginPage() {
 
       {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-[#64748b]">
-        <p>© 2026 BPS Provinsi Kalimantan Utara. All rights reserved.</p>
+        <p>&copy; 2026 BPS Provinsi Kalimantan Utara. All rights reserved.</p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
