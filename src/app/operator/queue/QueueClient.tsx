@@ -165,7 +165,7 @@ export function QueueClient({ initialData }: QueueClientProps) {
 
           {pendingTickets.length > 0 ? (
             <div className="space-y-4">
-              {pendingTickets.map((ticket, index) => (
+              {pendingTickets.map((ticket: TicketItem, index: number) => (
                 <div
                   key={ticket.id}
                   className="glass rounded-xl p-6 shadow-card card-interactive"

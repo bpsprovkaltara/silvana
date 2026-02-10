@@ -19,17 +19,10 @@ export async function GET(request: Request) {
     // Build where clause
     const where: Record<string, unknown> = {};
 
-    if (startDate) {
+    if (startDate || endDate) {
       where.scheduleDate = {
-        ...where.scheduleDate,
-        gte: new Date(startDate + "T00:00:00.000Z"),
-      };
-    }
-
-    if (endDate) {
-      where.scheduleDate = {
-        ...where.scheduleDate,
-        lte: new Date(endDate + "T23:59:59.999Z"),
+        ...(startDate && { gte: new Date(startDate + "T00:00:00.000Z") }),
+        ...(endDate && { lte: new Date(endDate + "T23:59:59.999Z") }),
       };
     }
 

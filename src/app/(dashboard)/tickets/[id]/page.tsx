@@ -35,6 +35,15 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   if (!ticket) notFound();
 
+  // Serialize dates to strings for client component
+  const serializedTicket = {
+    ...ticket,
+    scheduledDate: ticket.scheduledDate.toISOString(),
+    createdAt: ticket.createdAt.toISOString(),
+    startedAt: ticket.startedAt?.toISOString() || null,
+    completedAt: ticket.completedAt?.toISOString() || null,
+  };
+
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
       {/* Header */}
@@ -78,7 +87,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      <TicketDetailClient initialTicket={ticket} />
+      <TicketDetailClient initialTicket={serializedTicket} />
     </div>
   );
 }

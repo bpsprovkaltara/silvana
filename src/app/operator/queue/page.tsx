@@ -44,9 +44,31 @@ export default async function OperatorQueuePage() {
     },
   });
 
+  // Serialize dates to strings for client component
+  const serializeTicket = (ticket: typeof currentTicket) =>
+    ticket
+      ? {
+          ...ticket,
+          createdAt: ticket.createdAt.toISOString(),
+          updatedAt: ticket.updatedAt.toISOString(),
+          scheduledDate: ticket.scheduledDate.toISOString(),
+          startedAt: ticket.startedAt?.toISOString() || null,
+          completedAt: ticket.completedAt?.toISOString() || null,
+          cancelledAt: ticket.cancelledAt?.toISOString() || null,
+        }
+      : null;
+
   const initialData = {
-    current: currentTicket,
-    pending: pendingTickets,
+    current: serializeTicket(currentTicket),
+    pending: pendingTickets.map((ticket) => ({
+      ...ticket,
+      createdAt: ticket.createdAt.toISOString(),
+      updatedAt: ticket.updatedAt.toISOString(),
+      scheduledDate: ticket.scheduledDate.toISOString(),
+      startedAt: ticket.startedAt?.toISOString() || null,
+      completedAt: ticket.completedAt?.toISOString() || null,
+      cancelledAt: ticket.cancelledAt?.toISOString() || null,
+    })),
     completedTodayCount: completedToday,
   };
 

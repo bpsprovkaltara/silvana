@@ -28,121 +28,137 @@ export default function PublicDisplayPage() {
   const pending = data?.pending || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white">
-      {/* Header */}
-      <div className="mb-12 text-center animate-slide-in-up">
-        <h1 className="text-6xl font-bold mb-4">Antrian Layanan PST</h1>
-        <p className="text-2xl text-slate-300">BPS Provinsi Kalimantan Utara</p>
-        <div className="mt-4 text-slate-400 text-xl">
-          {new Date().toLocaleDateString("id-ID", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </div>
-      </div>
+    <>
+      {/* Skip to main content link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-        {/* Currently Processing */}
-        <div className="animate-slide-in-up animation-delay-100">
-          <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse-soft" />
-            Sedang Dilayani
-          </h2>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white">
+        {/* Header */}
+        <header className="mb-12 text-center animate-slide-in-up">
+          <h1 className="text-6xl font-bold mb-4">Antrian Layanan PST</h1>
+          <p className="text-2xl text-slate-300">BPS Provinsi Kalimantan Utara</p>
+          <div className="mt-4 text-slate-400 text-xl">
+            {new Date().toLocaleDateString("id-ID", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </div>
+        </header>
 
-          {processing.length > 0 ? (
-            <div className="space-y-4">
-              {processing.map(
-                (
-                  ticket: Record<string, unknown> & {
-                    id: string;
-                    serviceType: string;
-                    queueNumber: number;
-                    ticketNumber: string;
-                    operator?: { name: string };
-                  }
-                ) => (
-                  <div
-                    key={ticket.id}
-                    className={`bg-gradient-to-r ${serviceColors[ticket.serviceType]} p-6 rounded-2xl shadow-2xl`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-5xl font-bold">{ticket.queueNumber}</div>
-                      <div className="text-right">
-                        <div className="text-sm opacity-80">Loket</div>
-                        <div className="text-2xl font-bold">{ticket.operator?.name}</div>
+        <main id="main-content" className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          {/* Currently Processing */}
+          <div className="animate-slide-in-up animation-delay-100">
+            <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
+              <div
+                className="w-3 h-3 rounded-full bg-green-500 animate-pulse-soft"
+                aria-hidden="true"
+              />
+              Sedang Dilayani
+            </h2>
+
+            {processing.length > 0 ? (
+              <div className="space-y-4">
+                {processing.map(
+                  (
+                    ticket: Record<string, unknown> & {
+                      id: string;
+                      serviceType: string;
+                      queueNumber: number;
+                      ticketNumber: string;
+                      operator?: { name: string };
+                    }
+                  ) => (
+                    <div
+                      key={ticket.id}
+                      className={`bg-gradient-to-r ${serviceColors[ticket.serviceType]} p-6 rounded-2xl shadow-2xl`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-5xl font-bold">{ticket.queueNumber}</div>
+                        <div className="text-right">
+                          <div className="text-sm opacity-80">Loket</div>
+                          <div className="text-2xl font-bold">{ticket.operator?.name}</div>
+                        </div>
                       </div>
+                      <div className="text-3xl font-bold mb-2">{ticket.ticketNumber}</div>
+                      <div className="text-lg opacity-90">{serviceLabels[ticket.serviceType]}</div>
                     </div>
-                    <div className="text-3xl font-bold mb-2">{ticket.ticketNumber}</div>
-                    <div className="text-lg opacity-90">{serviceLabels[ticket.serviceType]}</div>
-                  </div>
-                )
-              )}
-            </div>
-          ) : (
-            <div className="bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl text-center">
-              <div className="text-6xl mb-4">⏸️</div>
-              <p className="text-2xl text-slate-400">Tidak ada antrian yang diproses</p>
-            </div>
-          )}
-        </div>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl text-center">
+                <div className="text-6xl mb-4">⏸️</div>
+                <p className="text-2xl text-slate-400">Tidak ada antrian yang diproses</p>
+              </div>
+            )}
+          </div>
 
-        {/* Pending Queue */}
-        <div className="animate-slide-in-up animation-delay-200">
-          <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse-soft" />
-            Antrian Menunggu
-          </h2>
+          {/* Pending Queue */}
+          <div className="animate-slide-in-up animation-delay-200">
+            <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
+              <div
+                className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse-soft"
+                aria-hidden="true"
+              />
+              Antrian Menunggu
+            </h2>
 
-          {pending.length > 0 ? (
-            <div className="space-y-4">
-              {pending.map(
-                (
-                  ticket: Record<string, unknown> & {
-                    id: string;
-                    serviceType: string;
-                    queueNumber: number;
-                    ticketNumber: string;
-                  },
-                  index: number
-                ) => (
-                  <div
-                    key={ticket.id}
-                    className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-slate-700"
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                    }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-3xl font-bold shrink-0">
-                        {ticket.queueNumber}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-2xl font-bold mb-1">{ticket.ticketNumber}</div>
-                        <div className="text-lg text-slate-400">
-                          {serviceLabels[ticket.serviceType]}
+            {pending.length > 0 ? (
+              <div className="space-y-4">
+                {pending.map(
+                  (
+                    ticket: Record<string, unknown> & {
+                      id: string;
+                      serviceType: string;
+                      queueNumber: number;
+                      ticketNumber: string;
+                    },
+                    index: number
+                  ) => (
+                    <div
+                      key={ticket.id}
+                      className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border-2 border-slate-700"
+                      style={{
+                        animationDelay: `${index * 100}ms`,
+                      }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-3xl font-bold shrink-0">
+                          {ticket.queueNumber}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-2xl font-bold mb-1">{ticket.ticketNumber}</div>
+                          <div className="text-lg text-slate-400">
+                            {serviceLabels[ticket.serviceType]}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )
-              )}
-            </div>
-          ) : (
-            <div className="bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl text-center">
-              <div className="text-6xl mb-4">✅</div>
-              <p className="text-2xl text-slate-400">Semua antrian telah dilayani</p>
-            </div>
-          )}
-        </div>
-      </div>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl text-center">
+                <div className="text-6xl mb-4">✅</div>
+                <p className="text-2xl text-slate-400">Semua antrian telah dilayani</p>
+              </div>
+            )}
+          </div>
+        </main>
 
-      {/* Footer */}
-      <div className="mt-12 text-center text-slate-500 text-lg animate-slide-in-up animation-delay-300">
-        <p>Mohon menunggu hingga nomor antrian Anda dipanggil</p>
-        <p className="mt-2 text-sm">Sistem Manajemen Antrian • Silvana v1.0</p>
+        {/* Footer */}
+        <footer className="mt-12 text-center text-slate-500 text-lg animate-slide-in-up animation-delay-300">
+          <p>Mohon menunggu hingga nomor antrian Anda dipanggil</p>
+          <p className="mt-2 text-sm">Sistem Manajemen Antrian • Silvana v1.0</p>
+        </footer>
       </div>
-    </div>
+    </>
   );
 }
