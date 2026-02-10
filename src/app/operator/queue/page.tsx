@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import QueueActions from "./QueueActions";
+import OperatorControls from "@/components/queue/OperatorControls";
 
 const serviceLabels: Record<string, string> = {
   KONSULTASI_STATISTIK: "Konsultasi Statistik",
@@ -20,7 +20,9 @@ const serviceColors: Record<string, string> = {
 
 export default async function OperatorQueuePage() {
   const session = await auth();
-  if (!session || session.user.role !== "OPERATOR") redirect("/login");
+  if (!session || (session.user.role !== "OPERATOR" && session.user.role !== "ADMIN")) {
+    redirect("/login");
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -41,8 +43,10 @@ export default async function OperatorQueuePage() {
   // Get pending tickets for today
   const pendingTickets = await prisma.ticket.findMany({
     where: {
-      status: "PENDING",
+      status: { in: ["PENDING", "ON_PROCESS"] },
       scheduledDate: { gte: today, lt: tomorrow },
+      // Exclude current ticket from list if it's already fetched above
+      id: currentTicket ? { not: currentTicket.id } : undefined,
     },
     orderBy: [{ scheduledTime: "asc" }, { queueNumber: "asc" }],
     include: {
@@ -113,19 +117,9 @@ export default async function OperatorQueuePage() {
                         className="w-12 h-12 rounded-xl flex items-center justify-center text-white"
                         style={{ backgroundColor: "var(--service-color)" }}
                       >
-                        <svg
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
+                        <span className="font-bold text-lg">
+                          {currentTicket.serviceType.substring(0, 2)}
+                        </span>
                       </div>
                       <div>
                         <div className="font-bold" style={{ color: "var(--service-color)" }}>
@@ -145,7 +139,9 @@ export default async function OperatorQueuePage() {
                   </div>
                 </div>
 
-                <QueueActions ticketId={currentTicket.id} action="complete" />
+                {/* Using new OperatorControls component */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <OperatorControls ticket={currentTicket as unknown as any} onUpdate={() => {}} />
               </div>
             ) : (
               <div className="glass rounded-2xl p-8 text-center shadow-card">
@@ -209,7 +205,10 @@ export default async function OperatorQueuePage() {
                         </div>
                       </div>
 
-                      {!currentTicket && <QueueActions ticketId={ticket.id} action="start" />}
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {!currentTicket && (
+                        <OperatorControls ticket={ticket as unknown as any} onUpdate={() => {}} />
+                      )}
                     </div>
                   </div>
                 ))}

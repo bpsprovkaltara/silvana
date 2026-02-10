@@ -51,6 +51,7 @@ export default auth((req) => {
   if (
     !pathname.startsWith("/admin") &&
     !pathname.startsWith("/operator") &&
+    !pathname.startsWith("/display") &&
     userRole === "OPERATOR"
   ) {
     return Response.redirect(new URL("/operator/dashboard", nextUrl));

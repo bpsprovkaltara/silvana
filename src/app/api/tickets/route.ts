@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { broadcast } from "@/lib/queue-events";
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 
@@ -71,8 +72,17 @@ export async function POST(request: Request) {
         scheduledTime,
         qrCode,
         queueNumber,
+        status: "PENDING",
+      },
+      include: {
+        user: {
+          select: { name: true },
+        },
       },
     });
+
+    // Broadcast new ticket event
+    broadcast("ticket:new", ticket);
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
