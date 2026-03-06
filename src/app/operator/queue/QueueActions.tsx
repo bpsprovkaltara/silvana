@@ -2,90 +2,104 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
+import { callTicket, serveTicket, completeTicket, skipTicket } from "@/lib/actions/tickets";
+import { Button } from "@/components/ui/button";
+import { Phone, Play, CheckCircle2, XCircle } from "lucide-react";
 
 interface QueueActionsProps {
   ticketId: string;
-  action: "start" | "complete";
+  status: string;
+  category?: string;
 }
 
-export default function QueueActions({ ticketId, action }: QueueActionsProps) {
+export default function QueueActions({ ticketId, status, category }: QueueActionsProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleAction() {
+  const handleAction = async (action: string) => {
     setIsLoading(true);
     try {
-      const endpoint =
-        action === "start" ? `/api/tickets/${ticketId}/start` : `/api/tickets/${ticketId}/complete`;
-
-      const response = await fetch(endpoint, {
-        method: "PATCH",
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        alert(data.error || "Terjadi kesalahan");
-        return;
+      let result;
+      if (action === "call") {
+        const counter = category === "PRIORITY" ? "LOKET_2" : "LOKET_1";
+        result = await callTicket(ticketId, counter);
+      } else if (action === "serve") {
+        result = await serveTicket(ticketId);
+      } else if (action === "complete") {
+        // Use fetch to status API to be consistent with OperatorControls
+        const res = await fetch(`/api/tickets/${ticketId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "DONE" }),
+        });
+        result = { success: res.ok };
+      } else if (action === "skip") {
+        result = await skipTicket(ticketId);
       }
 
-      router.refresh();
+      if (result?.success) {
+        toast.success("Berhasil memperbarui status");
+      } else {
+        toast.error(result?.error || "Terjadi kesalahan");
+      }
     } catch {
-      alert("Terjadi kesalahan, silakan coba lagi");
+      toast.error("Terjadi kesalahan sistem");
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
-  if (action === "start") {
+  if (status === "CHECKED_IN" || status === "WAITING") {
     return (
-      <button
-        onClick={handleAction}
-        disabled={isLoading}
-        className="px-6 py-3 bg-gradient-to-r from-[#d4744a] to-[#b85d38] text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-      >
-        {isLoading ? "..." : "Mulai Layani"}
-      </button>
+      <div className="flex gap-2">
+         <Button
+          onClick={() => handleAction("call")}
+          disabled={isLoading}
+          className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 h-12 rounded-xl flex items-center gap-2"
+        >
+          <Phone size={18} />
+          Panggil
+        </Button>
+      </div>
     );
   }
 
-  return (
-    <button
-      onClick={handleAction}
-      disabled={isLoading}
-      className="w-full px-6 py-4 bg-gradient-to-r from-[#10b981] to-[#059669] text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {isLoading ? (
-        <span className="flex items-center justify-center gap-2">
-          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
-          Memproses...
-        </span>
-      ) : (
-        <span className="flex items-center justify-center gap-2">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Selesaikan Layanan
-        </span>
-      )}
-    </button>
-  );
+  if (status === "CALLED") {
+    return (
+      <div className="flex gap-2 w-full">
+        <Button
+          onClick={() => handleAction("serve")}
+          disabled={isLoading}
+          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-14 rounded-xl flex items-center justify-center gap-2"
+        >
+          <Play size={20} />
+          Mulai Layani
+        </Button>
+        <Button
+          onClick={() => handleAction("skip")}
+          disabled={isLoading}
+          variant="outline"
+          className="border-red-200 text-red-600 hover:bg-red-50 font-bold px-6 h-14 rounded-xl"
+        >
+          <XCircle size={20} />
+        </Button>
+      </div>
+    );
+  }
+
+  if (status === "SERVING") {
+    return (
+      <Button
+        onClick={() => handleAction("complete")}
+        disabled={isLoading}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-16 rounded-xl flex items-center justify-center gap-3 text-lg"
+      >
+        <CheckCircle2 size={24} />
+        Selesaikan Layanan
+      </Button>
+    );
+  }
+
+  return null;
 }

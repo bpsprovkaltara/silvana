@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function FeedbackForm({ ticketId }: { ticketId: string }) {
   const router = useRouter();
@@ -30,13 +31,18 @@ export default function FeedbackForm({ ticketId }: { ticketId: string }) {
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.error || "Gagal mengirim feedback");
+        const errorMsg = data.error || "Gagal mengirim feedback";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
+      toast.success("Terima kasih atas penilaian Anda!");
       router.refresh();
     } catch {
-      setError("Terjadi kesalahan, silakan coba lagi");
+      const errorMsg = "Terjadi kesalahan, silakan coba lagi";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

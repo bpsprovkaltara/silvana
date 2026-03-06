@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getTodayStrWITA } from "@/lib/queue-logic";
 
 const serviceLabels: Record<string, string> = {
   KONSULTASI_STATISTIK: "Konsultasi Statistik",
@@ -10,16 +11,24 @@ const serviceLabels: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  PENDING: "Menunggu",
-  ON_PROCESS: "Diproses",
+  BOOKED: "Booking",
+  CHECKED_IN: "Checked In",
+  WAITING: "Menunggu",
+  CALLED: "Dipanggil",
+  SERVING: "Dilayani",
   DONE: "Selesai",
+  NO_SHOW: "Tidak Datang",
   CANCELLED: "Dibatalkan",
 };
 
 const statusClasses: Record<string, string> = {
-  PENDING: "status-pending",
-  ON_PROCESS: "status-process",
+  BOOKED: "status-pending",
+  CHECKED_IN: "status-pending",
+  WAITING: "status-pending",
+  CALLED: "status-process",
+  SERVING: "status-process",
   DONE: "status-done",
+  NO_SHOW: "status-cancelled",
   CANCELLED: "status-cancelled",
 };
 
@@ -28,7 +37,10 @@ export default async function OperatorTicketsPage() {
   if (!session || session.user.role !== "OPERATOR") redirect("/login");
 
   const tickets = await prisma.ticket.findMany({
-    where: { operatorId: session.user.id },
+    where: { 
+      operatorId: session.user.id,
+      status: TicketStatus.DONE
+    },
     orderBy: { updatedAt: "desc" },
     include: {
       user: { select: { name: true } },
@@ -36,8 +48,8 @@ export default async function OperatorTicketsPage() {
     },
   });
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStr = getTodayStrWITA();
+  const today = new Date(todayStr + "T00:00:00.000Z");
 
   const todayTickets = tickets.filter((t) => t.completedAt && new Date(t.completedAt) >= today);
   const avgRating =
@@ -116,7 +128,16 @@ export default async function OperatorTicketsPage() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#64748b]">{ticket.user.name}</td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-bold text-slate-700">
+                      {ticket.user?.name || ticket.guestName || "Tamu"}
+                    </div>
+                    {ticket.guestInstansi && (
+                      <div className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">
+                        {ticket.guestInstansi}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm text-[#64748b] hidden md:table-cell">
                     {serviceLabels[ticket.serviceType]}
                   </td>

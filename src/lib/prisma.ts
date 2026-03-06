@@ -1,4 +1,5 @@
-import { PrismaClient } from "@/generated/prisma";
+import { PrismaClient, TicketStatus, UserRole, ServiceType, VisitorCategory, QueueCounter, TicketSource } from "@/generated/prisma";
+export { TicketStatus, UserRole, ServiceType, VisitorCategory, QueueCounter, TicketSource };
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {

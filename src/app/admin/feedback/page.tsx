@@ -46,8 +46,8 @@ export default async function AdminFeedbackPage() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 animate-slide-in-up">
-        <h1 className="text-display text-3xl font-bold text-[#0a1628]">Feedback Pengunjung</h1>
-        <p className="text-[#64748b] mt-1">Penilaian dan masukan dari pengunjung layanan</p>
+        <h1 className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628]">Feedback Pengunjung</h1>
+        <p className="text-[#64748b] text-sm sm:text-base mt-1">Penilaian dan masukan dari pengunjung layanan</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -63,10 +63,10 @@ export default async function AdminFeedbackPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0a1628] to-[#2c4570] flex items-center justify-center text-white text-sm font-semibold">
-                      {feedback.user.name.charAt(0).toUpperCase()}
+                      {feedback.user?.name?.charAt(0).toUpperCase() || "T"}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#0a1628]">{feedback.user.name}</h3>
+                      <h3 className="font-semibold text-[#0a1628]">{feedback.user?.name || "Tamu"}</h3>
                       <p className="text-xs text-[#64748b]">
                         {feedback.ticket.ticketNumber} •{" "}
                         {serviceLabels[feedback.ticket.serviceType]}

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -11,9 +11,17 @@ export default async function DashboardPage() {
 
   const [totalTickets, pendingTickets, activeTicket] = await Promise.all([
     prisma.ticket.count({ where: { userId } }),
-    prisma.ticket.count({ where: { userId, status: "PENDING" } }),
+    prisma.ticket.count({ 
+      where: { 
+        userId, 
+        status: { in: [TicketStatus.BOOKED, TicketStatus.CHECKED_IN, TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING] } 
+      } 
+    }),
     prisma.ticket.findFirst({
-      where: { userId, status: { in: ["PENDING", "ON_PROCESS"] } },
+      where: { 
+        userId, 
+        status: { in: [TicketStatus.BOOKED, TicketStatus.CHECKED_IN, TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING] } 
+      },
       orderBy: { createdAt: "desc" },
       include: { operator: { select: { name: true } } },
     }),
@@ -109,9 +117,17 @@ export default async function DashboardPage() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <span
-                    className={`status-badge ${activeTicket.status === "PENDING" ? "status-pending" : "status-process"}`}
+                    className={`status-badge ${
+                      ["CALLED", "SERVING"].includes(activeTicket.status) 
+                        ? "status-process" 
+                        : "status-pending"
+                    }`}
                   >
-                    {activeTicket.status === "PENDING" ? "Menunggu" : "Diproses"}
+                    {activeTicket.status === "BOOKED" ? "Booking" : 
+                     activeTicket.status === "CHECKED_IN" ? "Checked In" :
+                     activeTicket.status === "WAITING" ? "Menunggu" :
+                     activeTicket.status === "CALLED" ? "Dipanggil" :
+                     activeTicket.status === "SERVING" ? "Dilayani" : "Status"}
                   </span>
                   <h3 className="text-display text-2xl font-bold text-[#0a1628] mt-2">
                     {activeTicket.ticketNumber}

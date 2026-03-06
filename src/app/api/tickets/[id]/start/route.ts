@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +15,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const existingProcess = await prisma.ticket.findFirst({
       where: {
         operatorId: session.user.id,
-        status: "ON_PROCESS",
+        status: { in: [TicketStatus.CALLED, TicketStatus.SERVING] },
       },
     });
 
@@ -35,14 +35,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Tiket tidak ditemukan" }, { status: 404 });
     }
 
-    if (ticket.status !== "PENDING") {
-      return NextResponse.json({ error: "Tiket tidak dalam status menunggu" }, { status: 400 });
+    const allowedStatuses: TicketStatus[] = [TicketStatus.CHECKED_IN, TicketStatus.WAITING, TicketStatus.CALLED];
+    if (!allowedStatuses.includes(ticket.status)) {
+      return NextResponse.json({ error: "Tiket tidak dalam kondisi dapat dilayani" }, { status: 400 });
     }
 
     const updated = await prisma.ticket.update({
       where: { id },
       data: {
-        status: "ON_PROCESS",
+        status: TicketStatus.SERVING,
         operatorId: session.user.id,
         startedAt: new Date(),
       },

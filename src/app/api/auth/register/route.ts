@@ -2,41 +2,22 @@ import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ProfessionType } from "@/generated/prisma";
+import { registerSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, professionType } = body;
-
-    // Validate required fields
-    if (!email || !password || !name || !professionType) {
-      return NextResponse.json({ error: "Semua field wajib diisi" }, { status: 400 });
+    
+    // Validate with Zod
+    const validation = registerSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0].message },
+        { status: 400 }
+      );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: "Format email tidak valid" }, { status: 400 });
-    }
-
-    // Validate password length
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password minimal 6 karakter" }, { status: 400 });
-    }
-
-    // Validate profession type
-    const validProfessions: ProfessionType[] = [
-      "GOVERNMENT_OFFICIAL",
-      "PRIVATE_EMPLOYEE",
-      "ENTREPRENEUR",
-      "RESEARCHER",
-      "STUDENT",
-      "OTHERS",
-    ];
-
-    if (!validProfessions.includes(professionType)) {
-      return NextResponse.json({ error: "Jenis pekerjaan tidak valid" }, { status: 400 });
-    }
+    const { email, password, name, professionType, nik, phoneNumber, instansi } = validation.data;
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
@@ -45,6 +26,15 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
+    }
+
+    // Check if NIK already exists
+    const existingNik = await prisma.user.findUnique({
+      where: { nik },
+    });
+
+    if (existingNik) {
+      return NextResponse.json({ error: "NIK sudah terdaftar" }, { status: 409 });
     }
 
     // Hash password and create user
@@ -56,6 +46,9 @@ export async function POST(request: Request) {
         password: hashedPassword,
         name,
         professionType: professionType as ProfessionType,
+        nik,
+        phoneNumber,
+        instansi,
         role: "VISITOR",
       },
     });

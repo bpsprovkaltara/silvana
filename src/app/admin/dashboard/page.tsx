@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import DashboardCharts from "@/components/admin/DashboardCharts";
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -14,13 +15,50 @@ export default async function AdminDashboardPage() {
     await Promise.all([
       prisma.user.count(),
       prisma.ticket.count(),
-      prisma.ticket.count({ where: { status: "PENDING" } }),
+      prisma.ticket.count({ 
+        where: { status: { in: [TicketStatus.BOOKED, TicketStatus.CHECKED_IN, TicketStatus.WAITING] } } 
+      }),
       prisma.ticket.count({
         where: { createdAt: { gte: today } },
       }),
       prisma.feedback.count(),
       prisma.feedback.aggregate({ _avg: { rating: true } }),
     ]);
+
+  // Aggregate service stats
+  const serviceStatsData = await prisma.ticket.groupBy({
+    by: ['serviceType'],
+    _count: { id: true },
+    orderBy: { _count: { id: 'desc' } }
+  });
+
+  const serviceLabels: Record<string, string> = {
+    KONSULTASI_STATISTIK: "Konsultasi",
+    PENJUALAN_DATA_MIKRO: "Data Mikro",
+    PERPUSTAKAAN_STATISTIK: "Perpustakaan",
+    REKOMENDASI_KEGIATAN_STATISTIK: "Rekomendasi",
+  };
+
+  const serviceStats = serviceStatsData.map((item: any) => ({
+    name: serviceLabels[item.serviceType] || item.serviceType,
+    value: item._count.id
+  }));
+
+  // Aggregate category stats
+  const categoryStatsData = await prisma.ticket.groupBy({
+    by: ['category'],
+    _count: { id: true }
+  });
+
+  const categoryLabels: Record<string, string> = {
+    REGULAR: "Umum",
+    PRIORITY: "Prioritas",
+  };
+
+  const categoryStats = categoryStatsData.map((item: any) => ({
+    name: categoryLabels[item.category] || item.category,
+    value: item._count.id
+  }));
 
   const recentTickets = await prisma.ticket.findMany({
     take: 5,
@@ -99,45 +137,67 @@ export default async function AdminDashboardPage() {
   ];
 
   const statusLabels: Record<string, string> = {
-    PENDING: "Menunggu",
-    ON_PROCESS: "Diproses",
+    BOOKED: "Booking",
+    CHECKED_IN: "Checked In",
+    WAITING: "Menunggu",
+    CALLED: "Dipanggil",
+    SERVING: "Dilayani",
     DONE: "Selesai",
+    NO_SHOW: "Tidak Datang",
     CANCELLED: "Dibatalkan",
   };
 
   const statusClasses: Record<string, string> = {
-    PENDING: "status-pending",
-    ON_PROCESS: "status-process",
+    BOOKED: "status-pending",
+    CHECKED_IN: "status-pending",
+    WAITING: "status-pending",
+    CALLED: "status-process",
+    SERVING: "status-process",
     DONE: "status-done",
+    NO_SHOW: "status-cancelled",
     CANCELLED: "status-cancelled",
   };
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8 animate-slide-in-up">
-        <h1 className="text-display text-3xl lg:text-4xl font-bold text-[#0a1628]">
-          Dashboard Admin
-        </h1>
-        <p className="text-[#64748b] text-lg mt-1">Selamat datang, {session.user.name}</p>
+      <div className="mb-8 animate-slide-in-up flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-display text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0a1628]">
+            Dashboard Admin
+          </h1>
+          <p className="text-[#64748b] text-base sm:text-lg mt-1">Selamat datang, {session.user.name}</p>
+        </div>
+        <a 
+          href="/api/admin/reports" 
+          className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-[#0a1628] text-white rounded-xl font-bold transition-all hover:bg-slate-800 shadow-lg shadow-slate-200 text-sm sm:text-base w-full sm:w-auto"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Ekspor Laporan (CSV)
+        </a>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-in-up animation-delay-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 animate-slide-in-up animation-delay-100">
         {stats.map((stat) => (
-          <div key={stat.label} className="glass rounded-xl p-6 shadow-card card-interactive">
-            <div className="flex items-center justify-between mb-4">
+          <div key={stat.label} className="glass rounded-xl p-5 sm:p-6 shadow-card card-interactive">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div
-                className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center ${stat.textColor}`}
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center ${stat.textColor}`}
               >
                 {stat.icon}
               </div>
             </div>
-            <div className="text-display text-3xl font-bold text-[#0a1628] mb-1">{stat.value}</div>
-            <div className="text-sm text-[#64748b]">{stat.label}</div>
+            <div className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628] mb-1">{stat.value}</div>
+            <div className="text-xs sm:text-sm text-[#64748b]">{stat.label}</div>
           </div>
         ))}
       </div>
+
+      {/* Charts Section */}
+      <DashboardCharts serviceStats={serviceStats} categoryStats={categoryStats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Tickets */}
@@ -179,7 +239,7 @@ export default async function AdminDashboardPage() {
                           {ticket.ticketNumber}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#64748b]">{ticket.user.name}</td>
+                      <td className="px-6 py-4 text-sm text-[#64748b]">{ticket.user?.name || "Tamu"}</td>
                       <td className="px-6 py-4">
                         <span className={`status-badge text-xs ${statusClasses[ticket.status]}`}>
                           {statusLabels[ticket.status]}

@@ -16,22 +16,22 @@ export default function DisplayHeader() {
         {/* BPS Logo Placeholder */}
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 relative">
-            <svg
-              viewBox="0 0 100 100"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-full h-full"
-            >
-              <path d="M50 10L90 30V70L50 90L10 70V30L50 10Z" fill="white" fillOpacity="0.2" />
-              <rect x="25" y="45" width="15" height="30" fill="#F7941D" />
-              <rect x="45" y="30" width="15" height="45" fill="#00AEEF" />
-              <rect x="65" y="50" width="15" height="25" fill="#39B54A" />
-            </svg>
+            <img
+    src="/image/bps.png"
+    alt="Logo BPS"
+    className="w-full h-full object-contain"
+  />
           </div>
           <div className="text-white">
             <h1 className="text-2xl font-bold leading-none">BPS</h1>
-            <p className="text-xs opacity-80 uppercase tracking-wider">Badan Pusat Statistik</p>
+            <p className="text-xs opacity-80 uppercase tracking-wider">Provinsi Kalimantan Utara</p>
           </div>
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="px-4 py-2 bg-white/10 rounded-xl backdrop-blur-md border border-white/10">
+          <div className="text-[10px] text-blue-200 uppercase tracking-wider font-bold">Jam Operasional</div>
+          <div className="text-lg font-bold text-white font-mono">07.30 - 16.00</div>
         </div>
       </div>
     </div>

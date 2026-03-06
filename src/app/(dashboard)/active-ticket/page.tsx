@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import TicketCard from "@/components/queue/TicketCard";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export default async function QueuePage() {
     where: {
       userId: session.user.id,
       createdAt: { gte: startOfDay },
-      status: { in: ["PENDING", "ON_PROCESS"] },
+      status: { in: [TicketStatus.BOOKED, TicketStatus.CHECKED_IN, TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING] },
     },
     orderBy: { createdAt: "desc" },
   });

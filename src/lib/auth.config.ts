@@ -6,6 +6,7 @@ import type { NextAuthConfig } from "next-auth";
  * Used by middleware (Edge Runtime) and extended in auth.ts.
  */
 export const authConfig: NextAuthConfig = {
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   session: {
     strategy: "jwt",

@@ -1,39 +1,47 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getTodayStrWITA } from "@/lib/queue-logic";
 
 export default async function OperatorDashboardPage() {
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR") redirect("/login");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStr = getTodayStrWITA();
+  const today = new Date(todayStr + "T00:00:00.000Z");
 
-  const [pendingToday, processingNow, completedToday, totalCompleted] = await Promise.all([
+  const [pendingToday, processingNow, completedToday, totalCompleted, reservationCount] = await Promise.all([
     prisma.ticket.count({
       where: {
-        status: "PENDING",
+        status: { in: [TicketStatus.CHECKED_IN, TicketStatus.WAITING] },
         scheduledDate: { gte: today },
       },
     }),
     prisma.ticket.count({
       where: {
-        status: "ON_PROCESS",
+        status: { in: [TicketStatus.CALLED, TicketStatus.SERVING] },
         operatorId: session.user.id,
       },
     }),
     prisma.ticket.count({
       where: {
-        status: "DONE",
+        status: TicketStatus.DONE,
         operatorId: session.user.id,
         completedAt: { gte: today },
       },
     }),
     prisma.ticket.count({
       where: {
-        status: "DONE",
+        status: TicketStatus.DONE,
         operatorId: session.user.id,
+      },
+    }),
+    prisma.ticket.count({
+      where: {
+        source: "RESERVATION",
+        status: { notIn: [TicketStatus.DONE, TicketStatus.CANCELLED, TicketStatus.NO_SHOW] },
+        scheduledDate: { gte: today },
       },
     }),
   ]);
@@ -41,7 +49,7 @@ export default async function OperatorDashboardPage() {
   // Get current ticket being processed
   const currentTicket = await prisma.ticket.findFirst({
     where: {
-      status: "ON_PROCESS",
+      status: { in: [TicketStatus.CALLED, TicketStatus.SERVING] },
       operatorId: session.user.id,
     },
     include: {
@@ -114,6 +122,22 @@ export default async function OperatorDashboardPage() {
         </svg>
       ),
     },
+    {
+      label: "Jadwal Reservasi",
+      value: reservationCount,
+      bgColor: "bg-[#fff1f2]",
+      textColor: "text-[#f43f5e]",
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
   ];
 
   const serviceLabels: Record<string, string> = {
@@ -127,14 +151,14 @@ export default async function OperatorDashboardPage() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 animate-slide-in-up">
-        <h1 className="text-display text-3xl lg:text-4xl font-bold text-[#0a1628]">
+        <h1 className="text-display text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0a1628]">
           Dashboard Operator
         </h1>
-        <p className="text-[#64748b] text-lg mt-1">Selamat datang, {session.user.name}</p>
+        <p className="text-[#64748b] text-base sm:text-lg mt-1">Selamat datang, {session.user.name}</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-in-up animation-delay-100">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 animate-slide-in-up animation-delay-100">
         {stats.map((stat) => (
           <div key={stat.label} className="glass rounded-xl p-5 shadow-card card-interactive">
             <div className="flex items-center justify-between mb-3">
@@ -159,9 +183,8 @@ export default async function OperatorDashboardPage() {
               <div>
                 <span className="status-badge status-process">Sedang Diproses</span>
                 <h3 className="text-display text-3xl font-bold text-[#0a1628] mt-2">
-                  {currentTicket.ticketNumber}
+                  {currentTicket.user?.name || currentTicket.guestName || "Tamu"}
                 </h3>
-                <p className="text-[#64748b] mt-1">{currentTicket.user.name}</p>
               </div>
               <div className="text-right">
                 <div className="text-xs text-[#64748b] mb-1">Antrian</div>
@@ -248,6 +271,35 @@ export default async function OperatorDashboardPage() {
                     <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-[#ecfdf5] text-[#065f46] rounded-lg text-xs font-medium">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                       {completedToday} selesai hari ini
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/operator/reservations">
+            <div className="glass rounded-xl p-6 shadow-card card-interactive cursor-pointer group h-full">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#f43f5e] to-[#e11d48] flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-display text-lg font-bold text-[#0a1628] mb-1">
+                    Jadwal Reservasi
+                  </h3>
+                  <p className="text-sm text-[#64748b]">Lihat daftar booking pengunjung</p>
+                  {reservationCount > 0 && (
+                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-[#fff1f2] text-[#9f1239] rounded-lg text-xs font-medium">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#f43f5e] animate-pulse-soft" />
+                      {reservationCount} reservasi aktif
                     </div>
                   )}
                 </div>

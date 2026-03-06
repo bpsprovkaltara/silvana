@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export default async function AdminOperatorsPage() {
@@ -30,7 +30,7 @@ export default async function AdminOperatorsPage() {
         take: 3,
       },
       operatedTickets: {
-        where: { status: "DONE" },
+        where: { status: TicketStatus.DONE },
         select: { completedAt: true },
         orderBy: { completedAt: "desc" },
         take: 1,
@@ -43,8 +43,8 @@ export default async function AdminOperatorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-slide-in-up">
         <div>
-          <h1 className="text-display text-3xl font-bold text-[#0a1628]">Kelola Operator</h1>
-          <p className="text-[#64748b] mt-1">Daftar operator pelayanan statistik terpadu</p>
+          <h1 className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628]">Kelola Operator</h1>
+          <p className="text-[#64748b] text-sm sm:text-base mt-1">Daftar operator pelayanan statistik terpadu</p>
         </div>
       </div>
 

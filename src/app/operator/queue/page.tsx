@@ -1,8 +1,11 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import OperatorControls from "@/components/queue/OperatorControls";
+import QueueEventHandler from "@/components/queue/QueueEventHandler";
+import OperatorQueueList from "@/components/queue/OperatorQueueList";
+import { getSortedQueue, getTodayStrWITA } from "@/lib/queue-logic";
 
 const serviceLabels: Record<string, string> = {
   KONSULTASI_STATISTIK: "Konsultasi Statistik",
@@ -20,57 +23,44 @@ const serviceColors: Record<string, string> = {
 
 export default async function OperatorQueuePage() {
   const session = await auth();
-  if (!session || (session.user.role !== "OPERATOR" && session.user.role !== "ADMIN")) {
-    redirect("/login");
-  }
+  if (!session || session.user.role !== "OPERATOR") redirect("/login");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStr = getTodayStrWITA();
+  const today = new Date(todayStr + "T00:00:00.000Z");
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Get current ticket being processed
-  const currentTicket = await prisma.ticket.findFirst({
-    where: {
-      status: "ON_PROCESS",
-      operatorId: session.user.id,
-    },
-    include: {
-      user: { select: { name: true, email: true } },
-    },
-  });
-
-  // Get pending tickets for today
-  const pendingTickets = await prisma.ticket.findMany({
-    where: {
-      status: { in: ["PENDING", "ON_PROCESS"] },
-      scheduledDate: { gte: today, lt: tomorrow },
-      // Exclude current ticket from list if it's already fetched above
-      id: currentTicket ? { not: currentTicket.id } : undefined,
-    },
-    orderBy: [{ scheduledTime: "asc" }, { queueNumber: "asc" }],
-    include: {
-      user: { select: { name: true } },
-    },
-  });
-
-  // Stats
-  const completedToday = await prisma.ticket.count({
-    where: {
-      status: "DONE",
-      operatorId: session.user.id,
-      completedAt: { gte: today },
-    },
-  });
+  const [activeTickets, pendingTickets, completedToday] = await Promise.all([
+    prisma.ticket.findMany({
+      where: {
+        operatorId: session.user.id,
+        status: { in: [TicketStatus.CALLED, TicketStatus.SERVING] },
+      },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    }),
+    getSortedQueue(),
+    prisma.ticket.count({
+      where: {
+        status: TicketStatus.DONE,
+        operatorId: session.user.id,
+        completedAt: { gte: today },
+      },
+    }),
+  ]);
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <QueueEventHandler />
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 animate-slide-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-slide-in-up">
         <div>
-          <h1 className="text-display text-3xl font-bold text-[#0a1628]">Antrian Layanan</h1>
-          <p className="text-[#64748b] mt-1">
-            {today.toLocaleDateString("id-ID", {
+          <h1 className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628]">Antrian Layanan</h1>
+          <p className="text-[#64748b] text-sm sm:text-base mt-1">
+            {new Date().toLocaleDateString("id-ID", {
+              timeZone: "Asia/Makassar",
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -78,9 +68,9 @@ export default async function OperatorQueuePage() {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 glass rounded-lg shadow-card">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm self-start sm:self-auto">
           <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse-soft" />
-          <span className="text-sm font-medium text-[#0a1628]">Sedang Bertugas</span>
+          <span className="text-xs sm:text-sm font-medium text-[#0a1628]">Sedang Bertugas</span>
         </div>
       </div>
 
@@ -91,57 +81,109 @@ export default async function OperatorQueuePage() {
           <div className="animate-slide-in-up animation-delay-100">
             <h2 className="text-display text-xl font-bold text-[#0a1628] mb-4">Sedang Dilayani</h2>
 
-            {currentTicket ? (
-              <div className="glass rounded-2xl p-8 shadow-deep border-2 border-[#06b6d4]/20">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <span className="status-badge status-process">Sedang Diproses</span>
-                    <h3 className="text-display text-3xl font-bold text-[#0a1628] mt-2">
-                      {currentTicket.ticketNumber}
-                    </h3>
-                    <p className="text-lg text-[#64748b] mt-1">{currentTicket.user.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-[#64748b] mb-1">Antrian</div>
-                    <div className="queue-number text-5xl">{currentTicket.queueNumber}</div>
-                  </div>
-                </div>
-
-                <div className={`mb-6 ${serviceColors[currentTicket.serviceType]}`}>
-                  <div
-                    className="px-6 py-4 rounded-xl"
-                    style={{ backgroundColor: "var(--service-bg)" }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-white"
-                        style={{ backgroundColor: "var(--service-color)" }}
-                      >
-                        <span className="font-bold text-lg">
-                          {currentTicket.serviceType.substring(0, 2)}
-                        </span>
-                      </div>
+            {activeTickets.length > 0 ? (
+              <div className="space-y-4">
+                {activeTickets.map((ticket) => (
+                  <div key={ticket.id} className="glass rounded-2xl p-5 sm:p-8 shadow-deep border-2 border-[#06b6d4]/20">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                       <div>
-                        <div className="font-bold" style={{ color: "var(--service-color)" }}>
-                          {serviceLabels[currentTicket.serviceType]}
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          <span className={`status-badge text-[10px] sm:text-xs ${ticket.status === TicketStatus.CALLED ? 'bg-amber-100 text-amber-700' : 'status-process'}`}>
+                            {ticket.status === TicketStatus.CALLED ? 'Dipanggil' : 'Sedang Diproses'}
+                          </span>
+                          {ticket.source === 'RESERVATION' && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-blue-600 text-white uppercase tracking-wider shadow-sm shadow-blue-100">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              Reservasi
+                            </span>
+                          )}
                         </div>
-                        {currentTicket.startedAt && (
-                          <div className="text-sm text-[#64748b]">
-                            Mulai:{" "}
-                            {new Date(currentTicket.startedAt).toLocaleTimeString("id-ID", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                        <h3 className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628]">
+                          {ticket.ticketNumber}
+                        </h3>
+                        <p className="text-base sm:text-lg text-[#64748b] mt-1">
+                          {ticket.user?.name || ticket.guestName || "Tamu"}
+                        </p>
+                      </div>
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1">
+                        <div className="text-[10px] text-[#64748b]">
+                          {ticket.category === 'PRIORITY' ? 'Antrian B (Prioritas)' : 'Antrian A (Umum)'}
+                        </div>
+                        <div className="queue-number text-4xl sm:text-5xl">{ticket.queueNumber}</div>
+                      </div>
+                    </div>
+
+                    <div className={`mb-6 ${serviceColors[ticket.serviceType]}`}>
+                      <div
+                        className="px-6 py-4 rounded-xl"
+                        style={{ backgroundColor: "var(--service-bg)" }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-white"
+                            style={{ backgroundColor: "var(--service-color)" }}
+                          >
+                            <span className="font-bold text-lg">
+                              {ticket.serviceType.substring(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-bold" style={{ color: "var(--service-color)" }}>
+                              {serviceLabels[ticket.serviceType]}
+                            </div>
+                            {ticket.startedAt && (
+                              <div className="text-sm text-[#64748b]">
+                                Mulai:{" "}
+                                {new Date(ticket.startedAt).toLocaleTimeString("id-ID", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guest Details */}
+                    {(ticket.guestNik || ticket.guestInstansi || ticket.guestContact) && (
+                      <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {ticket.guestNik && (
+                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">NIK</p>
+                            <p className="text-sm font-bold text-slate-700">{ticket.guestNik}</p>
+                          </div>
+                        )}
+                        {ticket.guestInstansi && (
+                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Instansi</p>
+                            <p className="text-sm font-bold text-slate-700">{ticket.guestInstansi}</p>
+                          </div>
+                        )}
+                        {ticket.guestContact && (
+                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kontak</p>
+                            <p className="text-sm font-bold text-slate-700">{ticket.guestContact}</p>
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </div>
+                    )}
 
-                {/* Using new OperatorControls component */}
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <OperatorControls ticket={currentTicket as unknown as any} onUpdate={() => {}} />
+                    {/* Specific Needs */}
+                    {ticket.needs && (
+                      <div className="mb-6 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">
+                          Keperluan Layanan
+                        </h4>
+                        <p className="text-[#0a1628] font-medium italic">"{ticket.needs}"</p>
+                      </div>
+                    )}
+
+                    <OperatorControls ticket={ticket as unknown as any} />
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="glass rounded-2xl p-8 text-center shadow-card">
@@ -171,54 +213,8 @@ export default async function OperatorQueuePage() {
           </div>
 
           {/* Queue List */}
-          <div className="animate-slide-in-up animation-delay-200">
-            <h2 className="text-display text-xl font-bold text-[#0a1628] mb-4">
-              Daftar Antrian ({pendingTickets.length})
-            </h2>
+          <OperatorQueueList tickets={pendingTickets as any[]} activeTickets={activeTickets as any[]} />
 
-            {pendingTickets.length > 0 ? (
-              <div className="space-y-4">
-                {pendingTickets.map((ticket, index) => (
-                  <div
-                    key={ticket.id}
-                    className="glass rounded-xl p-6 shadow-card card-interactive"
-                    style={{ animationDelay: `${(index + 3) * 100}ms` }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center text-white font-bold text-xl shrink-0">
-                          {ticket.queueNumber}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1 flex-wrap">
-                            <h3 className="text-display text-lg font-bold text-[#0a1628]">
-                              {ticket.ticketNumber}
-                            </h3>
-                            <span className="text-xs px-2 py-1 bg-[#fffbeb] text-[#92400e] rounded font-medium">
-                              {ticket.scheduledTime}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[#64748b]">{ticket.user.name}</p>
-                          <span className="text-xs text-[#64748b]">
-                            {serviceLabels[ticket.serviceType]}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {!currentTicket && (
-                        <OperatorControls ticket={ticket as unknown as any} onUpdate={() => {}} />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="glass rounded-xl p-8 text-center shadow-card">
-                <p className="text-[#64748b]">Tidak ada tiket menunggu untuk hari ini</p>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Sidebar */}
@@ -273,7 +269,7 @@ export default async function OperatorQueuePage() {
                   <span className="text-sm text-[#0a1628]">Diproses</span>
                 </div>
                 <span className="text-display text-xl font-bold text-[#06b6d4]">
-                  {currentTicket ? 1 : 0}
+                  {activeTickets.length}
                 </span>
               </div>
 
@@ -344,6 +340,25 @@ export default async function OperatorQueuePage() {
                   />
                 </svg>
                 Riwayat Layanan
+              </Link>
+              <Link
+                href="/operator/reservations"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/50 transition-colors text-sm font-medium text-[#0a1628]"
+              >
+                <svg
+                  className="w-5 h-5 text-[#64748b]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Jadwal Reservasi
               </Link>
             </div>
           </div>

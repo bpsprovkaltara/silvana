@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, TicketStatus } from "@/lib/prisma";
 import { broadcast } from "@/lib/queue-events";
 import { NextResponse } from "next/server";
 
@@ -12,17 +12,51 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const { id } = await params;
-    const { status } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { status, rating, comment } = body;
 
-    if (!["PENDING", "ON_PROCESS", "DONE", "CANCELLED"].includes(status)) {
+    // Handle special RECALL action (no database status change, just broadcast)
+    if (status === "RECALL") {
+      const ticket = await prisma.ticket.findUnique({
+        where: { id },
+        include: {
+          user: { select: { name: true } },
+          operator: { select: { name: true } },
+        },
+      });
+
+      if (!ticket) {
+        return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+      }
+
+      broadcast("ticket:called", ticket);
+      return NextResponse.json(ticket);
+    }
+
+    const validStatuses: TicketStatus[] = [
+      TicketStatus.BOOKED, 
+      TicketStatus.CHECKED_IN, 
+      TicketStatus.WAITING, 
+      TicketStatus.CALLED, 
+      TicketStatus.SERVING, 
+      TicketStatus.DONE, 
+      TicketStatus.NO_SHOW, 
+      TicketStatus.CANCELLED
+    ];
+    if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
     const updateData: Record<string, unknown> = { status };
-    if (status === "ON_PROCESS") {
-      updateData.startedAt = new Date();
+    
+    // Assign operator when calling or serving
+    if (status === TicketStatus.CALLED || status === TicketStatus.SERVING) {
       updateData.operatorId = session.user.id;
-    } else if (status === "DONE") {
+    }
+
+    if (status === TicketStatus.SERVING) {
+      updateData.startedAt = new Date();
+    } else if (status === TicketStatus.DONE) {
       updateData.completedAt = new Date();
     }
 
@@ -30,20 +64,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       where: { id },
       data: updateData,
       include: {
-        user: {
-          select: { name: true },
-        },
-        operator: {
-          select: { name: true },
-        },
+        user: { select: { name: true } },
+        operator: { select: { name: true } },
       },
     });
 
     // Broadcast valid events based on status
-    if (status === "ON_PROCESS") {
+    if (status === TicketStatus.CALLED) {
       broadcast("ticket:called", ticket);
-    } else if (status === "DONE") {
+    } else if (status === TicketStatus.SERVING) {
+      broadcast("ticket:serving", ticket);
+    } else if (status === TicketStatus.DONE) {
       broadcast("ticket:done", ticket);
+    } else if (status === TicketStatus.CANCELLED || status === TicketStatus.NO_SHOW) {
+      broadcast("ticket:skipped", ticket);
     }
 
     return NextResponse.json(ticket);

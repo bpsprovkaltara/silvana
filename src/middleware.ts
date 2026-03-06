@@ -4,7 +4,7 @@ import { authConfig } from "@/lib/auth.config";
 const { auth } = NextAuth(authConfig);
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/register"];
+const publicRoutes = ["/login", "/register", "/display", "/queue"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -18,8 +18,8 @@ export default auth((req) => {
   const isAuthenticated = !!req.auth;
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-  // Redirect authenticated users away from login/register
-  if (isPublicRoute && isAuthenticated) {
+  // Redirect authenticated users away from login/register (allow display & queue)
+  if (isPublicRoute && isAuthenticated && !pathname.startsWith("/display") && !pathname.startsWith("/queue")) {
     const role = req.auth?.user?.role;
     let redirectTo = "/";
 
@@ -43,8 +43,14 @@ export default auth((req) => {
 
   const userRole = req.auth?.user?.role;
 
-  // Redirect ADMIN/OPERATOR from visitor pages to their dashboards
-  if (!pathname.startsWith("/admin") && !pathname.startsWith("/operator") && userRole === "ADMIN") {
+  // Redirect ADMIN/OPERATOR from visitor pages to their dashboards (allow display & queue)
+  if (
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/operator") &&
+    !pathname.startsWith("/display") &&
+    !pathname.startsWith("/queue") &&
+    userRole === "ADMIN"
+  ) {
     return Response.redirect(new URL("/admin/dashboard", nextUrl));
   }
 
@@ -52,6 +58,7 @@ export default auth((req) => {
     !pathname.startsWith("/admin") &&
     !pathname.startsWith("/operator") &&
     !pathname.startsWith("/display") &&
+    !pathname.startsWith("/queue") &&
     userRole === "OPERATOR"
   ) {
     return Response.redirect(new URL("/operator/dashboard", nextUrl));

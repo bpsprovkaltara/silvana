@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState, Suspense } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -12,6 +13,8 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,15 +43,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-[#d4744a]/10 to-transparent rounded-full blur-3xl animate-pulse-soft" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-[#06b6d4]/10 to-transparent rounded-full blur-3xl animation-delay-200 animate-pulse-soft" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-r from-[#0a1628]/5 to-transparent rounded-full blur-3xl animation-delay-400 animate-pulse-soft" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] bg-gradient-to-br from-[#d4744a]/10 to-transparent rounded-full blur-3xl animate-pulse-soft" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-gradient-to-tr from-[#06b6d4]/10 to-transparent rounded-full blur-3xl animation-delay-200 animate-pulse-soft" />
       </div>
 
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center relative z-10">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 lg:gap-12 items-center relative z-10 py-8">
         {/* Left side - Branding */}
         <div className="hidden md:block space-y-6 animate-slide-in-up">
           <div className="space-y-4">
@@ -101,13 +103,22 @@ function LoginForm() {
         </div>
 
         {/* Right side - Login Form */}
-        <div className="animate-slide-in-up animation-delay-200">
-          <div className="glass rounded-2xl p-8 shadow-deep">
-            <div className="mb-8">
-              <h2 className="text-display text-3xl font-bold text-[#0a1628] mb-2">
+        <div className="animate-slide-in-up animation-delay-200 w-full max-w-md mx-auto md:max-w-none flex flex-col">
+          {/* Mobile branding */}
+          <div className="md:hidden mb-8 text-center animate-slide-in-up animation-delay-300">
+            <h1 className="text-display text-5xl font-bold text-[#0a1628] mb-1">Silvana</h1>
+            <p className="text-sm text-[#64748b] leading-relaxed">
+              Pelayanan Statistik Terpadu<br />
+              <span className="font-medium">BPS Provinsi Kalimantan Utara</span>
+            </p>
+          </div>
+
+          <div className="glass rounded-2xl p-6 sm:p-8 shadow-deep">
+            <div className="mb-6 sm:mb-8 text-center md:text-left">
+              <h2 className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628] mb-1 sm:mb-2">
                 Selamat Datang
               </h2>
-              <p className="text-[#64748b]">Masuk ke akun Anda untuk melanjutkan</p>
+              <p className="text-sm sm:text-base text-[#64748b]">Masuk ke akun Anda untuk melanjutkan</p>
             </div>
 
             {isRegistered && !error && (
@@ -142,15 +153,28 @@ function LoginForm() {
                 <label htmlFor="password" className="block text-sm font-semibold text-[#0a1628]">
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4744a] focus:border-transparent transition-all placeholder:text-slate-400"
-                />
+                <div className="relative group">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4744a] focus:border-transparent transition-all placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-[#d4744a] transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between text-sm">
@@ -174,7 +198,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full px-6 py-3.5 bg-gradient-to-r from-[#d4744a] to-[#b85d38] text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 sm:py-3.5 bg-gradient-to-r from-[#d4744a] to-[#b85d38] text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {isLoading ? "Memproses..." : "Masuk"}
               </button>
@@ -183,40 +207,34 @@ function LoginForm() {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200" />
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white/80 backdrop-blur-sm text-[#64748b]">atau</span>
+                <div className="relative flex justify-center text-xs sm:text-sm">
+                  <span className="px-4 bg-white/50 backdrop-blur-sm text-[#64748b]">atau</span>
                 </div>
               </div>
 
               <a
                 href="/register"
-                className="block w-full px-6 py-3.5 bg-white/80 backdrop-blur-sm border-2 border-[#0a1628] text-[#0a1628] font-semibold rounded-lg hover:bg-[#0a1628] hover:text-white transition-all duration-300 text-center"
+                className="block w-full px-6 py-3 sm:py-3.5 bg-white/80 backdrop-blur-sm border-2 border-[#0a1628] text-[#0a1628] font-semibold rounded-lg hover:bg-[#0a1628] hover:text-white transition-all duration-300 text-center text-sm sm:text-base"
               >
                 Daftar Akun Baru
               </a>
             </form>
 
             {/* Demo credentials */}
-            <div className="mt-6 p-4 bg-[#fffbeb] border border-[#fde68a] rounded-lg">
-              <p className="text-xs font-semibold text-[#92400e] mb-2">Demo Credentials:</p>
-              <div className="text-xs text-[#92400e] space-y-1 font-mono">
-                <p>Admin: admin@silvana.bps.go.id / admin123</p>
-                <p>Operator: operator@silvana.bps.go.id / operator123</p>
-                <p>Pengunjung: pengunjung@silvana.bps.go.id / pengunjung123</p>
+            <div className="mt-6 p-4 bg-[#fffbeb]/80 backdrop-blur-sm border border-[#fde68a] rounded-lg">
+              <p className="text-[10px] sm:text-xs font-semibold text-[#92400e] mb-1.5 sm:mb-2 uppercase tracking-wider">Demo Credentials:</p>
+              <div className="text-[10px] sm:text-xs text-[#92400e] space-y-1 font-mono">
+                <p className="flex justify-between"><span>Admin:</span> <span className="font-normal">admin@silvana.bps.go.id  / admin123</span></p>
+                <p className="flex justify-between"><span>Operator:</span> <span className="font-normal">operator@silvana.bps.go.id  / operator123</span></p>
+                <p className="flex justify-between"><span>Pengunjung:</span> <span className="font-normal">pengunjung@silvana.bps.go.id  / pengunjung123</span></p>
               </div>
             </div>
-          </div>
-
-          {/* Mobile branding */}
-          <div className="md:hidden mt-8 text-center animate-slide-in-up animation-delay-300">
-            <h1 className="text-display text-4xl font-bold text-[#0a1628] mb-2">Silvana</h1>
-            <p className="text-[#64748b]">Pelayanan Statistik Terpadu BPS Kalimantan Utara</p>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-[#64748b]">
+      <div className="mt-auto py-6 text-center text-[10px] sm:text-xs text-[#64748b] relative z-10">
         <p>&copy; 2026 BPS Provinsi Kalimantan Utara. All rights reserved.</p>
       </div>
     </div>

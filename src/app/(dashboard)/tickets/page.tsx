@@ -18,16 +18,24 @@ const serviceColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  PENDING: "Menunggu",
-  ON_PROCESS: "Diproses",
+  BOOKED: "Booking",
+  CHECKED_IN: "Checked In",
+  WAITING: "Menunggu",
+  CALLED: "Dipanggil",
+  SERVING: "Dilayani",
   DONE: "Selesai",
+  NO_SHOW: "Tidak Datang",
   CANCELLED: "Dibatalkan",
 };
 
 const statusClasses: Record<string, string> = {
-  PENDING: "status-pending",
-  ON_PROCESS: "status-process",
+  BOOKED: "status-pending",
+  CHECKED_IN: "status-pending",
+  WAITING: "status-pending",
+  CALLED: "status-process",
+  SERVING: "status-process",
   DONE: "status-done",
+  NO_SHOW: "status-cancelled",
   CANCELLED: "status-cancelled",
 };
 
@@ -36,7 +44,13 @@ export default async function TicketsPage() {
   if (!session) redirect("/login");
 
   const tickets = await prisma.ticket.findMany({
-    where: { userId: session.user.id },
+    where: { 
+      userId: session.user.id,
+      // Only show active tickets
+      status: {
+        notIn: ["DONE", "CANCELLED", "NO_SHOW"]
+      }
+    },
     orderBy: { createdAt: "desc" },
     include: { operator: { select: { name: true } } },
   });

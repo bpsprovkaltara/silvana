@@ -7,7 +7,6 @@ export default function MobileSidebarToggle({ children }: { children: React.Reac
   const pathname = usePathname();
   const [openState, setOpenState] = useState({ open: false, pathname });
 
-  // Close sidebar on route change (derived state pattern)
   if (openState.pathname !== pathname) {
     setOpenState({ open: false, pathname });
   }
@@ -18,7 +17,6 @@ export default function MobileSidebarToggle({ children }: { children: React.Reac
 
   return (
     <>
-      {/* Hamburger button - mobile only */}
       <button
         onClick={show}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 glass rounded-lg shadow-card"
@@ -39,7 +37,6 @@ export default function MobileSidebarToggle({ children }: { children: React.Reac
         </svg>
       </button>
 
-      {/* Overlay - mobile only */}
       {open && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
@@ -47,7 +44,6 @@ export default function MobileSidebarToggle({ children }: { children: React.Reac
         />
       )}
 
-      {/* Sidebar drawer - mobile only */}
       <div
         className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"

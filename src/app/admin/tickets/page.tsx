@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { CancelTicketButton } from "@/components/admin/CancelTicketButton";
 
 const serviceLabels: Record<string, string> = {
   KONSULTASI_STATISTIK: "Konsultasi Statistik",
@@ -10,16 +11,24 @@ const serviceLabels: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  PENDING: "Menunggu",
-  ON_PROCESS: "Diproses",
+  BOOKED: "Booking",
+  CHECKED_IN: "Checked In",
+  WAITING: "Menunggu",
+  CALLED: "Dipanggil",
+  SERVING: "Dilayani",
   DONE: "Selesai",
+  NO_SHOW: "Tidak Datang",
   CANCELLED: "Dibatalkan",
 };
 
 const statusClasses: Record<string, string> = {
-  PENDING: "status-pending",
-  ON_PROCESS: "status-process",
+  BOOKED: "status-pending",
+  CHECKED_IN: "status-pending",
+  WAITING: "status-pending",
+  CALLED: "status-process",
+  SERVING: "status-process",
   DONE: "status-done",
+  NO_SHOW: "status-cancelled",
   CANCELLED: "status-cancelled",
 };
 
@@ -42,26 +51,30 @@ export default async function AdminTicketsPage() {
   ]);
 
   const counts: Record<string, number> = {
-    PENDING: 0,
-    ON_PROCESS: 0,
+    WAITING: 0,
+    PROCESSING: 0,
     DONE: 0,
     CANCELLED: 0,
   };
+  
   statusCounts.forEach((s) => {
-    counts[s.status] = s._count;
+    if (["BOOKED", "CHECKED_IN", "WAITING"].includes(s.status)) counts.WAITING += s._count;
+    else if (["CALLED", "SERVING"].includes(s.status)) counts.PROCESSING += s._count;
+    else if (s.status === "DONE") counts.DONE += s._count;
+    else if (["NO_SHOW", "CANCELLED"].includes(s.status)) counts.CANCELLED += s._count;
   });
 
   const statusStats = [
     {
       label: "Menunggu",
-      value: counts.PENDING,
+      value: counts.WAITING,
       bgColor: "bg-[#fffbeb]",
       textColor: "text-[#f59e0b]",
       dotColor: "bg-[#f59e0b]",
     },
     {
       label: "Diproses",
-      value: counts.ON_PROCESS,
+      value: counts.PROCESSING,
       bgColor: "bg-[#ecfeff]",
       textColor: "text-[#06b6d4]",
       dotColor: "bg-[#06b6d4]",
@@ -86,21 +99,21 @@ export default async function AdminTicketsPage() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 animate-slide-in-up">
-        <h1 className="text-display text-3xl font-bold text-[#0a1628]">Semua Tiket</h1>
-        <p className="text-[#64748b] mt-1">Kelola seluruh tiket layanan</p>
+        <h1 className="text-display text-2xl sm:text-3xl font-bold text-[#0a1628]">Semua Tiket</h1>
+        <p className="text-[#64748b] text-sm sm:text-base mt-1">Kelola seluruh tiket layanan</p>
       </div>
 
       {/* Status Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-in-up animation-delay-100">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 animate-slide-in-up animation-delay-100">
         {statusStats.map((stat) => (
-          <div key={stat.label} className="glass rounded-xl p-5 shadow-card card-interactive">
+          <div key={stat.label} className="glass rounded-xl p-4 sm:p-5 shadow-card card-interactive">
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-2.5 h-2.5 rounded-full ${stat.dotColor}`} />
-              <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+              <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${stat.dotColor}`} />
+              <span className="text-[10px] sm:text-xs font-semibold text-[#64748b] uppercase tracking-wider">
                 {stat.label}
               </span>
             </div>
-            <div className={`text-display text-3xl font-bold ${stat.textColor}`}>{stat.value}</div>
+            <div className={`text-display text-2xl sm:text-3xl font-bold ${stat.textColor}`}>{stat.value}</div>
           </div>
         ))}
       </div>
@@ -132,6 +145,9 @@ export default async function AdminTicketsPage() {
                 <th className="text-left px-6 py-4 text-xs font-semibold text-[#64748b] uppercase tracking-wider hidden xl:table-cell">
                   Operator
                 </th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -144,8 +160,8 @@ export default async function AdminTicketsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-[#0a1628]">{ticket.user.name}</div>
-                      <div className="text-xs text-[#64748b]">{ticket.user.email}</div>
+                      <div className="text-sm font-medium text-[#0a1628]">{ticket.user?.name || "Tamu"}</div>
+                      <div className="text-xs text-[#64748b]">{ticket.user?.email || "-"}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 hidden md:table-cell">
@@ -173,11 +189,20 @@ export default async function AdminTicketsPage() {
                   <td className="px-6 py-4 text-sm text-[#64748b] hidden xl:table-cell">
                     {ticket.operator?.name || <span className="text-xs italic">Belum ada</span>}
                   </td>
+                  <td className="px-6 py-4">
+                    {!["DONE", "CANCELLED", "NO_SHOW"].includes(ticket.status) && (
+                      <CancelTicketButton
+                        ticketId={ticket.id}
+                        ticketNumber={ticket.ticketNumber}
+                        variant="icon"
+                      />
+                    )}
+                  </td>
                 </tr>
               ))}
               {tickets.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-[#64748b]">
+                  <td colSpan={8} className="px-6 py-12 text-center text-[#64748b]">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#f1f5f9] flex items-center justify-center">
                       <svg
                         className="w-8 h-8 text-[#64748b]"

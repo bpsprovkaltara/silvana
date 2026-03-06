@@ -74,7 +74,7 @@ export default async function SchedulePage() {
           <div>
             <h3 className="font-semibold text-[#0a1628] mb-1">Informasi Jadwal</h3>
             <p className="text-sm text-[#64748b]">
-              Layanan tersedia pada hari kerja (Senin - Jumat), pukul 08:00 - 15:00 WIB. Pastikan
+              Layanan tersedia pada hari kerja (Senin - Jumat), pukul 08:00 - 15:00 WITA. Pastikan
               untuk membuat tiket terlebih dahulu sebelum datang.
             </p>
           </div>

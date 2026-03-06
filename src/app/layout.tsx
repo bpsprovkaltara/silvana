@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "@/components/ui/sonner";
+import { ConnectionStatus } from "@/components/connection-status";
 import "./globals.css";
 
 const sansFont = Plus_Jakarta_Sans({
@@ -27,9 +29,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${sansFont.variable} ${displayFont.variable}`}>
+    <html lang="id" className={`${sansFont.variable} ${displayFont.variable}`} suppressHydrationWarning>
       <body className="antialiased">
+        <ConnectionStatus />
         <SessionProvider>{children}</SessionProvider>
+        <Toaster />
       </body>
     </html>
   );

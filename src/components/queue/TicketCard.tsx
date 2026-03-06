@@ -9,7 +9,7 @@ import { CheckCircle2, Clock, XCircle } from "lucide-react";
 type Ticket = {
   id: string;
   ticketNumber: string;
-  status: "PENDING" | "ON_PROCESS" | "DONE" | "CANCELLED";
+  status: "BOOKED" | "CHECKED_IN" | "WAITING" | "CALLED" | "SERVING" | "DONE" | "NO_SHOW" | "CANCELLED";
   serviceType: string;
   queueNumber: number;
   qrCode: string;
@@ -27,12 +27,16 @@ export default function TicketCard({ initialTicket }: { initialTicket: Ticket })
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "PENDING":
+      case "BOOKED":
+      case "CHECKED_IN":
+      case "WAITING":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "ON_PROCESS":
+      case "CALLED":
+      case "SERVING":
         return "bg-blue-100 text-blue-800 border-blue-200 animate-pulse";
       case "DONE":
         return "bg-green-100 text-green-800 border-green-200";
+      case "NO_SHOW":
       case "CANCELLED":
         return "bg-red-100 text-red-800 border-red-200";
       default:
@@ -42,12 +46,16 @@ export default function TicketCard({ initialTicket }: { initialTicket: Ticket })
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "PENDING":
+      case "BOOKED":
+      case "CHECKED_IN":
+      case "WAITING":
         return <Clock className="w-5 h-5" />;
-      case "ON_PROCESS":
+      case "CALLED":
+      case "SERVING":
         return <Clock className="w-5 h-5 animate-spin" />;
       case "DONE":
         return <CheckCircle2 className="w-5 h-5" />;
+      case "NO_SHOW":
       case "CANCELLED":
         return <XCircle className="w-5 h-5" />;
       default:
@@ -60,7 +68,7 @@ export default function TicketCard({ initialTicket }: { initialTicket: Ticket })
       <CardHeader className="text-center pb-2">
         <CardTitle className="text-2xl font-bold flex flex-col gap-2">
           <span>Nomor Antrean Anda</span>
-          <span className="text-5xl font-mono text-primary">{ticket.ticketNumber}</span>
+          <span className="text-xl font-mono text-primary">{ticket.ticketNumber}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 pt-4">

@@ -1,6 +1,14 @@
 "use client";
 
-type TicketStatus = "PENDING" | "ON_PROCESS" | "DONE" | "CANCELLED";
+type TicketStatus = 
+  | "BOOKED" 
+  | "CHECKED_IN" 
+  | "WAITING" 
+  | "CALLED" 
+  | "SERVING" 
+  | "DONE" 
+  | "NO_SHOW" 
+  | "CANCELLED";
 type ServiceType =
   | "KONSULTASI_STATISTIK"
   | "PENJUALAN_DATA_MIKRO"
@@ -33,16 +41,24 @@ const serviceColors: Record<ServiceType, string> = {
 };
 
 const statusLabels: Record<TicketStatus, string> = {
-  PENDING: "Menunggu",
-  ON_PROCESS: "Diproses",
+  BOOKED: "Booking",
+  CHECKED_IN: "Checked In",
+  WAITING: "Menunggu",
+  CALLED: "Dipanggil",
+  SERVING: "Dilayani",
   DONE: "Selesai",
+  NO_SHOW: "Tidak Datang",
   CANCELLED: "Dibatalkan",
 };
 
 const statusClasses: Record<TicketStatus, string> = {
-  PENDING: "status-pending",
-  ON_PROCESS: "status-process",
+  BOOKED: "status-pending",
+  CHECKED_IN: "status-pending",
+  WAITING: "status-pending",
+  CALLED: "status-process",
+  SERVING: "status-process",
   DONE: "status-done",
+  NO_SHOW: "status-cancelled",
   CANCELLED: "status-cancelled",
 };
 
@@ -140,7 +156,7 @@ export default function TicketCard({
       </div>
 
       {/* QR Code placeholder */}
-      {status === "PENDING" && (
+      {["BOOKED", "CHECKED_IN", "WAITING"].includes(status) && (
         <div className="mt-4 pt-4 border-t border-slate-200">
           <div className="flex items-center justify-center p-6 bg-white rounded-lg border-2 border-dashed border-slate-300">
             <div className="text-center">

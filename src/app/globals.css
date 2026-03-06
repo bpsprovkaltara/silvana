@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-sans-family);
+  --font-sans: "Inter", "Outfit", "Plus Jakarta Sans", ui-sans-serif, system-ui;
   --font-display: var(--font-display-family);
+
+  --animate-marquee: marquee 30s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(100%); }
+    to { transform: translateX(-100%); }
+  }
+
 
   /* Color palette - Refined Data Bureau */
   --color-bureau-navy: #0a1628;
@@ -18,6 +26,23 @@
   --color-slate: #64748b;
   --color-slate-light: #cbd5e1;
   --color-pearl: #f8fafc;
+
+  /* Shadcn / Primary */
+  --color-primary: #0046c0;
+  --color-primary-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #0046c0;
 
   /* Semantic colors */
   --color-pending: var(--color-amber);
